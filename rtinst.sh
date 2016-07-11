@@ -393,12 +393,12 @@ if [ $(dpkg-query -W -f='${Status}' "vsftpd" 2>/dev/null | grep -c "ok installed
   echo "Installing Pure-Ftpd" | tee -a $logfile
     apt-get -y install pure-ftpd >> $logfile 2>&1
 fi
-pure-pw mkdb
-ln -s /etc/pure-ftpd/pureftpd.passwd /etc/pureftpd.passwd
-ln -s /etc/pure-ftpd/pureftpd.pdb /etc/pureftpd.pdb
-ln -s /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/PureDB
+#//pure-pw mkdb
+#//ln -s /etc/pure-ftpd/pureftpd.passwd /etc/pureftpd.passwd
+#//ln -s /etc/pure-ftpd/pureftpd.pdb /etc/pureftpd.pdb
+#//ln -s /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/PureDB
 
-echo '$ftpport' > /etc/pure-ftpd/conf/Bind 
+echo "$ftpport" > /etc/pure-ftpd/conf/Bind 
 echo '2' > /etc/pure-ftpd/conf/TLS
 echo '5' > /etc/pure-ftpd/conf/MaxClientsPerIP
 echo 'yes' > /etc/pure-ftpd/conf/Daemonize
