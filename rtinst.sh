@@ -399,6 +399,10 @@ fi
 #//ln -s /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/PureDB
 
 echo "$ftpport" > /etc/pure-ftpd/conf/Bind 
+echo 'yes' > /etc/pure-ftpd/conf/ChrootEveryone
+echo 'no' > /etc/pure-ftpd/conf/DisplayDotFiles
+echo 'yes' > /etc/pure-ftpd/conf/ProhibitDotFilesWrite
+echo 'yes' > /etc/pure-ftpd/conf/ProhibitDotFilesRead
 echo '2' > /etc/pure-ftpd/conf/TLS
 echo '5' > /etc/pure-ftpd/conf/MaxClientsPerIP
 echo 'yes' > /etc/pure-ftpd/conf/Daemonize
@@ -690,4 +694,5 @@ echo
 echo "To install webmin enter: sudo rtwebmin"
 echo
 echo "PLEASE REBOOT YOUR SYSTEM ONCE YOU HAVE NOTED THE ABOVE INFORMATION"
+rm $home/sources
 chown $user rtinst.info
