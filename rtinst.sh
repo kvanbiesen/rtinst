@@ -49,7 +49,7 @@ install_rt=0
 sshport=''
 rudevflag=1
 passfile='/etc/nginx/.htpasswd'
-package_list="sudo nano autoconf build-essential ca-certificates comerr-dev curl cfv dtach htop irssi libcloog-ppl-dev libcppunit-dev libcurl3 libncurses5-dev libterm-readline-gnu-perl libsigc++-2.0-dev libperl-dev libtool libxml2-dev ncurses-base ncurses-term ntp patch pkg-config $phpver-fpm $phpver $phpver-cli $phpver-dev $phpver-curl $phpver-geoip $phpver-mcrypt $phpver-xmlrpc python-scgi screen subversion texinfo unzip zlib1g-dev libcurl4-openssl-dev mediainfo python-software-properties software-properties-common aptitude $phpver-json nginx-full apache2-utils git libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libjson-perl libjson-xs-perl libxml-libxslt-perl libjson-rpc-perl libarchive-zip-perl"
+package_list="openssl sudo nano autoconf build-essential ca-certificates comerr-dev curl cfv dtach htop irssi libcloog-ppl-dev libcppunit-dev libcurl3 libncurses5-dev libterm-readline-gnu-perl libsigc++-2.0-dev libperl-dev libtool libxml2-dev ncurses-base ncurses-term ntp patch pkg-config $phpver-fpm $phpver $phpver-cli $phpver-dev $phpver-curl $phpver-geoip $phpver-mcrypt $phpver-xmlrpc python-scgi screen subversion texinfo unzip zlib1g-dev libcurl4-openssl-dev mediainfo python-software-properties software-properties-common aptitude $phpver-json nginx-full apache2-utils git libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libjson-perl libjson-xs-perl libxml-libxslt-perl libjson-rpc-perl libarchive-zip-perl"
 Install_list=""
 
 #exit on error function
@@ -191,7 +191,7 @@ until $gotip
       gotip=enter_ip
     done
 
-echo "Your server's IP/Name is set to $serverip"
+	echo "Your server's IP/Name is set to $serverip"
 
 #check rtorrent installation
 if which rtorrent; then
@@ -390,104 +390,44 @@ echo "SSH port set to $sshport"
 ftpport=$(random 41005 48995)
 
 if [ $(dpkg-query -W -f='${Status}' "vsftpd" 2>/dev/null | grep -c "ok installed") -eq 0 ]; then
-  echo "Installing vsftpd" | tee -a $logfile
-
-  if [ $relno = 12 ]; then
-    add-apt-repository -y ppa:thefrontiergroup/vsftpd >> $logfile 2>&1
-    apt-get update >> $logfile 2>&1
-    apt-get -y install vsftpd >> $logfile 2>&1
-  elif [ $relno = 7 ]; then
-    echo "deb http://ftp.cyconet.org/debian wheezy-updates main non-free contrib" >> /etc/apt/sources.list.d/wheezy-updates.cyconet2.list
-    aptitude update  >> $logfile 2>&1 || error_exit "problem updating package lists"
-    aptitude -o Aptitude::Cmdline::ignore-trust-violations=true -y install -t wheezy-updates debian-cyconet-archive-keyring vsftpd  >> $logfile 2>&1 || error_exit "Unable to download vsftpd"
-  else
-    apt-get -y install vsftpd >> $logfile 2>&1
-  fi
-
+  echo "Installing Pure-Ftpd" | tee -a $logfile
+    apt-get -y install pure-ftpd >> $logfile 2>&1
 fi
+pure-pw mkdb
+ln -s /etc/pure-ftpd/pureftpd.passwd /etc/pureftpd.passwd
+ln -s /etc/pure-ftpd/pureftpd.pdb /etc/pureftpd.pdb
+ln -s /etc/pure-ftpd/conf/PureDB /etc/pure-ftpd/auth/PureDB
 
-sed -i '/^#\?anonymous_enable/ c\anonymous_enable=NO' /etc/vsftpd.conf
-sed -i '/^#\?local_enable/ c\local_enable=YES' /etc/vsftpd.conf
-sed -i '/^#\?write_enable/ c\write_enable=YES' /etc/vsftpd.conf
-sed -i '/^#\?local_umask/ c\local_umask=022' /etc/vsftpd.conf
-sed -i '/^#\?listen=/ c\listen=YES' /etc/vsftpd.conf
-sed -i 's/^listen_ipv6/#listen_ipv6/g' /etc/vsftpd.conf
-sed -i 's/^rsa_private_key_file/#rsa_private_key_file/g' /etc/vsftpd.conf
-sed -i '/^rsa_cert_file/ c\rsa_cert_file=\/etc\/ssl\/private\/vsftpd\.pem' /etc/vsftpd.conf
+echo '$ftpport' > /etc/pure-ftpd/conf/Bind 
+echo '2' > /etc/pure-ftpd/conf/TLS
+echo '5' > /etc/pure-ftpd/conf/MaxClientsPerIP
+echo 'yes' > /etc/pure-ftpd/conf/Daemonize
+echo 'no' > /etc/pure-ftpd/conf/VerboseLog
+echo 'yes' > /etc/pure-ftpd/conf/NoChmod
+echo 'no' > /etc/pure-ftpd/conf/AnonymousOnly
+echo 'yes' > /etc/pure-ftpd/conf/NoAnonymous
+echo 'no' > /etc/pure-ftpd/conf/PAMAuthentication
+echo 'yes' > /etc/pure-ftpd/conf/UnixAuthentication
+echo 'yes' > /etc/pure-ftpd/conf/DontResolve
+echo '15' > /etc/pure-ftpd/conf/MaxIdleTime
+echo '2000 8' > /etc/pure-ftpd/conf/LimitRecursion
+echo 'yes' > /etc/pure-ftpd/conf/AntiWarez
+echo 'no' > /etc/pure-ftpd/conf/AnonymousCanCreateDirs
+echo 'yes' > /etc/pure-ftpd/conf/AllowUserFXP
+echo 'no' > /etc/pure-ftpd/conf/AllowAnonymousFXP
+echo 'no' > /etc/pure-ftpd/conf/AutoRename
+echo 'yes' > /etc/pure-ftpd/conf/AnonymousCantUpload
+echo 'yes' > /etc/pure-ftpd/conf/NoChmod
+echo 'yes' > /etc/pure-ftpd/conf/CustomerProof
 
-grep ^listen_port /etc/vsftpd.conf > /dev/null || echo "listen_port=$ftpport" >> /etc/vsftpd.conf
 
-if [ -z "$(grep ^ssl_enable /etc/vsftpd.conf)" ]; then
-  echo "ssl_enable=YES" >> /etc/vsftpd.conf
-else
-  sed -i '/^ssl_enable/ c\ssl_enable=YES' /etc/vsftpd.conf
-fi
+mkdir -p /etc/ssl/private/
+openssl req -x509 -nodes -days 3650 -subj /CN=$serverip -newkey rsa:2048 -keyout /etc/ssl/private/pure-ftpd.pem -out /etc/ssl/private/pure-ftpd.pem >> $logfile 2>&1
+chmod 600 /etc/ssl/private/pure-ftpd.pem
 
-if [ -z "$(grep ^chroot_local_user /etc/vsftpd.conf)" ];then
-  echo "chroot_local_user=YES" >> /etc/vsftpd.conf
-else
- sed -i '/^chroot_local_user/ c\chroot_local_user=YES' /etc/vsftpd.conf
-fi
+service pure-ftpd restart 1>> $logfile
 
-if [ -z "$(grep ^allow_writeable_chroot /etc/vsftpd.conf)" ]; then
-   echo "allow_writeable_chroot=YES" >> /etc/vsftpd.conf
-else
-  sed -i '/^allow_writeable_chroot/ c\allow_writeable_chroot=YES' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^allow_anon_ssl /etc/vsftpd.conf)" ];then
-  echo "allow_anon_ssl=NO" >> /etc/vsftpd.conf
-else
-   sed -i '/^allow_anon_ssl/ c\allow_anon_ssl=NO' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^force_local_data_ssl /etc/vsftpd.conf)" ];then
-  echo "force_local_data_ssl=YES" >> /etc/vsftpd.conf
-else
-  sed -i '/^force_local_data_ssl/ c\force_local_data_ssl=YES' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^force_local_logins_ssl /etc/vsftpd.conf)" ];then
-  echo "force_local_logins_ssl=YES" >> /etc/vsftpd.conf
-else
-  sed -i '/^force_local_logins_ssl/ c\force_local_logins_ssl=YES' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^ssl_sslv2 /etc/vsftpd.conf)" ];then
-  echo "ssl_sslv2=YES" >> /etc/vsftpd.conf
-else
-  sed -i '/^ssl_sslv2/ c\ssl_sslv2=YES' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^ssl_sslv3 /etc/vsftpd.conf)" ];then
-  echo "ssl_sslv3=YES" >> /etc/vsftpd.conf
-else
-  sed -i '/^ssl_sslv3/ c\ssl_sslv3=YES' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^ssl_tlsv1 /etc/vsftpd.conf)" ];then
-  echo "ssl_tlsv1=YES" >> /etc/vsftpd.conf
-else
-  sed -i '/^ssl_tlsv1/ c\ssl_tlsv1=YES' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^require_ssl_reuse /etc/vsftpd.conf)" ];then
-  echo "require_ssl_reuse=NO" >> /etc/vsftpd.conf
-else
-  sed -i '/^require_ssl_reuse/ c\require_ssl_reuse=NO' /etc/vsftpd.conf
-fi
-
-if [ -z "$(grep ^ssl_ciphers /etc/vsftpd.conf)" ];then
-  echo "ssl_ciphers=HIGH" >> /etc/vsftpd.conf
-else
-  sed -i '/^ssl_ciphers/ c\ssl_ciphers=HIGH' /etc/vsftpd.conf
-fi
-
-openssl req -x509 -nodes -days 3650 -subj /CN=$serverip -newkey rsa:2048 -keyout /etc/ssl/private/vsftpd.pem -out /etc/ssl/private/vsftpd.pem >> $logfile 2>&1
-
-service vsftpd restart 1>> $logfile
-
-ftpport=$(grep 'listen_port=' /etc/vsftpd.conf | sed 's/[^0-9]*//g')
+ftpport=$(cat '/etc/pure-ftpd/conf/Bind')
 echo "FTP port set to $ftpport"
 
 # install rtorrent
@@ -688,6 +628,8 @@ echo "\$autodlPassword = \"$adlpass\";" >> /var/www/rutorrent/conf/users/$user/p
 echo >> /var/www/rutorrent/conf/users/$user/plugins/autodl-irssi/conf.php
 echo "?>" >> /var/www/rutorrent/conf/users/$user/plugins/autodl-irssi/conf.php
 
+rtgetscripts /var/www/rutorrent/plugins/diskspace/action.php diskspace.action.php
+
 cd $home/.autodl
 echo "[options]" > autodl2.cfg
 echo "gui-server-port = $adlport" >> autodl2.cfg
@@ -704,6 +646,9 @@ cd $home
 if [ -z "$(grep "ALL ALL = NOPASSWD: /usr/local/bin/rtsetpass" /etc/sudoers)" ]; then
   echo "ALL ALL = NOPASSWD: /usr/local/bin/rtsetpass" | (EDITOR="tee -a" visudo)  > /dev/null 2>&1
 fi
+
+#add quota support to all users
+echo "www-data ALL=(root) NOPASSWD: /usr/sbin/repquota" | tee -a /etc/sudoers > /dev/null
 
 su $user -c '/usr/local/bin/rt restart'
 su $user -c '/usr/local/bin/rt -i restart'

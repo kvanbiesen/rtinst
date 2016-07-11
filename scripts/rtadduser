@@ -15,7 +15,7 @@ scgi_port_start=5000
 rpc_start=2
 rtport_start=51001
 sshport=$(grep 'Port ' /etc/ssh/sshd_config | sed 's/[^0-9]*//g')
-ftpport=$(grep 'listen_port=' /etc/vsftpd.conf | sed 's/[^0-9]*//g')
+ftpport=$(cat '/etc/pure-ftpd/conf/Bind')
 cronline1="@reboot sleep 10; /usr/local/bin/rtcheck irssi rtorrent"
 cronline2="*/10 * * * * /usr/local/bin/rtcheck irssi rtorrent"
 serverip=$(ip route get 8.8.8.8 | awk 'NR==1 {print $NF}')
