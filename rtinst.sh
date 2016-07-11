@@ -191,7 +191,7 @@ until $gotip
       gotip=enter_ip
     done
 
-	echo "Your server's IP/Name is set to $serverip"
+echo "Your server's IP/Name is set to $serverip"
 
 #check rtorrent installation
 if which rtorrent; then
