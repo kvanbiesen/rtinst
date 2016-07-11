@@ -626,6 +626,7 @@ if [[ $quota == yes ]]; then
 	else
 		rm -r diskspace/
 	fi
+fi
 
 
 echo "<?php" > /var/www/rutorrent/conf/users/$user/config.php
