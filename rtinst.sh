@@ -617,16 +617,16 @@ rm rutorrent/conf/config.php
 rtgetscripts /var/www/rutorrent/conf/config.php ru.config
 mkdir -p /var/www/rutorrent/conf/users/$user/plugins
 
-cd /var/www/rutorrent/plugins
-rm -r diskspace/
-git clone https://github.com/kvanbiesen/rtplugins.git
-if [[ $quota == yes ]]; then
-    if [[ ${primaryroot} == "root" ]]; then
-		rm -r diskspaceh/
-	else
-		rm -r diskspace/
-	fi
-fi
+#cd /var/www/rutorrent/plugins
+#rm -r diskspace/
+#git clone https://github.com/kvanbiesen/rtplugins.git
+#if [[ $quota == yes ]]; then
+#    if [[ ${primaryroot} == "root" ]]; then
+#		rm -r diskspaceh/
+#	else
+#		rm -r diskspace/
+#	fi
+#fi
 
 
 echo "<?php" > /var/www/rutorrent/conf/users/$user/config.php
