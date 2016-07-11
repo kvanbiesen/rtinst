@@ -1,5 +1,5 @@
-
 #!/bin/bash
+
 #
 #
 # The Seedbox From Scratch Script
@@ -19,6 +19,14 @@
 # --> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ######################################################################
+PATH=/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/bin:/sbin
+
+if ! [ "$LOGNAME" = "root" ]; then
+  echo "Must be run as root, directly or with sudo"
+  exit 1
+fi
+
+
 echo "1194" > /etc/openvpn.info
 OPENVPNPORT1=`cat /etc/openvpn.info`
 IPADDRESS1=`ifconfig | sed -n 's/.*inet addr:\([0-9.]\+\)\s.*/\1/p' | grep -v 127 | head -n 1`
