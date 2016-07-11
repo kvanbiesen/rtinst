@@ -264,9 +264,9 @@ if [ $# -gt 0 ]; then
 fi
 
 #pop quota question
-_askquota
-_askpartition
-_qmount
+#_askquota
+#_askpartition
+#_qmount
 
 # check IP Address
 case $serverip in
