@@ -4,6 +4,8 @@
 #
 # The Seedbox From Scratch Script
 # By dannyti ---> https://github.com/dannyti/
+# Adapted to needs 
+# By kvanbiesen -> https://github.com/kvanbiesen
 #
 #
 ######################################################################
@@ -86,9 +88,11 @@ newclient "$CLIENT"
 echo ""
 echo "$CLIENT.ovpn is zipped into $CLIENT.zip"
 echo "Client $CLIENT added, cert available at https://$IP1/rutorrent/$CLIENT.zip to use in any OpenVPN client"
-sudo chown --reference=restartSeedbox *.ovpn
+#sudo chown --reference=restartSeedbox *.ovpn
 zip $CLIENT.zip ~/$CLIENT.ovpn
 sudo mv $CLIENT.zip /var/www/rutorrent
+sudo cp /var/www/rutorrent/$CLIENT.zip /home/$CLIENT/$CLIENT-openvpn.zip
+sudo rm ~/$CLIENT.ovpn
 exit
 ;;
 2)
@@ -107,6 +111,8 @@ echo "crl-verify /etc/openvpn/easy-rsa/2.0/keys/crl.pem" >> "/etc/openvpn/server
 /etc/init.d/openvpn restart
 echo ""
 echo "Certificate for client $CLIENT revoked"
+sudo rm /var/www/rutorrent/$CLIENT.zip
+sudo rm /home/$CLIENT/$CLIENT-openvpn.zip
 fi
 exit
 ;;
@@ -166,7 +172,7 @@ echo ""
 echo "Okay, that was all I needed. We are ready to setup your OpenVPN server now"
 read -n1 -r -p "Press any key to continue..."
 apt-get update
-apt-get install openvpn iptables openssl -y
+apt-get install openvpn iptables openssl zip -y
 cp -R /usr/share/doc/openvpn/examples/easy-rsa/ /etc/openvpn
 # easy-rsa isn't available by default for Debian Jessie and newer
 if [[ ! -d /etc/openvpn/easy-rsa/2.0/ ]]; then
@@ -284,7 +290,9 @@ echo "$CLIENT.ovpn is zipped into $CLIENT.zip"
 echo "Client $CLIENT added, cert available at https://$IP1/rutorrent/$CLIENT.zip to use in any OpenVPN client"
 echo ""
 echo "If you want to add more clients, you simply need to run this script another time!"
-sudo chown --reference=restartSeedbox *.ovpn
+
 zip $CLIENT.zip ~/$CLIENT.ovpn
 sudo mv $CLIENT.zip /var/www/rutorrent
+sudo cp /var/www/rutorrent/$CLIENT.zip /home/$CLIENT/$CLIENT-openvpn.zip
+sudo rm ~/$CLIENT.ovpn
 fi

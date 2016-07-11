@@ -7,6 +7,13 @@
 #  --> Licensed under the MIT license: http://www.opensource.org/licenses/mit-license.php
 #
 ######################################################################
+#Script Console Colors
+black=$(tput setaf 0); red=$(tput setaf 1); green=$(tput setaf 2); yellow=$(tput setaf 3);
+blue=$(tput setaf 4); magenta=$(tput setaf 5); cyan=$(tput setaf 6); white=$(tput setaf 7);
+on_red=$(tput setab 1); on_green=$(tput setab 2); on_yellow=$(tput setab 3); on_blue=$(tput setab 4);
+on_magenta=$(tput setab 5); on_cyan=$(tput setab 6); on_white=$(tput setab 7); bold=$(tput bold);
+dim=$(tput dim); underline=$(tput smul); reset_underline=$(tput rmul); standout=$(tput smso);
+reset_standout=$(tput rmso); normal=$(tput sgr0); alert=${white}${on_red}; title=${standout};
 
 PATH=/usr/local/bin:/usr/bin:/usr/local/sbin:/usr/sbin:/bin:/sbin
 
@@ -17,6 +24,7 @@ libtorrentloc='http://rtorrent.net/downloads/libtorrent-'$libtorrentrel'.tar.gz'
 xmlrpcloc='https://svn.code.sf.net/p/xmlrpc-c/code/stable'
 
 blob=master
+rtdir=https://raw.githubusercontent.com/kvanbiesen/rtinst/$blob/scripts
 
 if [ $(dpkg-query -W -f='${Status}' lsb-release 2>/dev/null | grep -c "ok installed") -gt 0 ]; then
   fullrel=$(lsb_release -sd)
@@ -50,6 +58,92 @@ rudevflag=1
 passfile='/etc/nginx/.htpasswd'
 package_list="openssl sudo nano autoconf build-essential ca-certificates comerr-dev curl cfv dtach htop irssi libcloog-ppl-dev libcppunit-dev libcurl3 libncurses5-dev libterm-readline-gnu-perl libsigc++-2.0-dev libperl-dev libtool libxml2-dev ncurses-base ncurses-term ntp patch pkg-config $phpver-fpm $phpver $phpver-cli $phpver-dev $phpver-curl $phpver-geoip $phpver-mcrypt $phpver-xmlrpc python-scgi screen subversion texinfo unzip zlib1g-dev libcurl4-openssl-dev mediainfo python-software-properties software-properties-common aptitude $phpver-json nginx-full apache2-utils git libarchive-zip-perl libnet-ssleay-perl libhtml-parser-perl libxml-libxml-perl libjson-perl libjson-xs-perl libxml-libxslt-perl libjson-rpc-perl libarchive-zip-perl"
 Install_list=""
+
+
+function _askquota() {
+  echo -ne "${bold}${yellow}Do you wish to use user quotas?${normal} (Default: ${green}${bold}Y${normal}) "; read input
+    case $input in
+      [yY] | [yY][Ee][Ss] | "" ) quota="yes";echo "${bold}Quotas will be installed${normal}" ;;
+      [nN] | [nN][Oo] ) quota="no";echo "${cyan}Quotas will not be installed${normal}" ;;
+    *) quota="yes";echo "${bold}Quotas will be installed${normal}" ;;
+    esac
+}
+
+# primary partition question
+function _askpartition() {
+  if [[ $quota == yes ]]; then
+  echo
+  echo "##################################################################################"
+  echo "#${bold} By default the script will initiate a build using ${green}/${normal} ${bold}as the${normal}"
+  echo "#${bold} primary partition for mounting quotas.${normal}"
+  echo "#"
+  echo "#${bold} Some providers, such as OVH and SYS force ${green}/home${normal} ${bold}as the primary mount ${normal}"
+  echo "#${bold} on their server setups. So if you have an OVH or SYS server and have not"
+  echo "#${bold} modified your partitions, it is safe to choose option ${yellow}2)${normal} ${bold}below.${normal}"
+  echo "#"
+  echo "#${bold} If you are not sure:${normal}"
+  echo "#${bold} I have listed out your current partitions below. Your mountpoint will be"
+  echo "#${bold} listed as ${green}/home${normal} ${bold}or ${green}/${normal}${bold}. ${normal}"
+  echo "#"
+  echo "#${bold} Typically, the partition with the most space assigned is your default.${normal}"
+  echo "##################################################################################"
+  echo
+  lsblk
+  echo
+  echo -e "${bold}${yellow}1)${normal} / - ${green}root mount${normal}"
+  echo -e "${bold}${yellow}2)${normal} /home - ${green}home mount${normal}"
+  echo -ne "${bold}${yellow}What is your mount point for user quotas?${normal} (Default ${green}1${normal}): "; read version
+  case $version in
+    1 | "") primaryroot=root  ;;
+    2) primaryroot=home  ;;
+    *) primaryroot=root ;;
+  esac
+  echo "Using ${green}$primaryroot mount${normal} for quotas"
+  echo
+fi
+}
+
+# enable quota for disks
+function _qmount() {
+  # Setup mount points for Quotas
+  if [[ $quota == yes ]]; then
+    if [[ $DISTRO == Ubuntu ]]; then
+      if [[ ${primaryroot} == "root" ]]; then
+        sed -i 's/errors=remount-ro/usrjquota=aquota.user,jqfmt=vfsv1,errors=remount-ro/g' /etc/fstab
+        apt-get install -y linux-image-extra-virtual quota >>"${OUTTO}" 2>&1
+        mount -o remount / || mount -o remount /home >>"${OUTTO}" 2>&1
+        quotacheck -auMF vfsv1 >>"${OUTTO}" 2>&1
+        quotaon -uv / >>"${OUTTO}" 2>&1
+        service quota start >>"${OUTTO}" 2>&1
+      else
+        sed -i 's/errors=remount-ro/usrjquota=aquota.user,jqfmt=vfsv1,errors=remount-ro/g' /etc/fstab
+        apt-get install -y linux-image-extra-virtual quota >>"${OUTTO}" 2>&1
+        mount -o remount /home >>"${OUTTO}" 2>&1
+        quotacheck -auMF vfsv1 >>"${OUTTO}" 2>&1
+        quotaon -uv /home >>"${OUTTO}" 2>&1
+        service quota start >>"${OUTTO}" 2>&1
+      fi
+    elif [[ $DISTRO == Debian ]]; then
+      if [[ ${primaryroot} == "root" ]]; then
+        sed -i 's/errors=remount-ro/usrjquota=aquota.user,jqfmt=vfsv1,errors=remount-ro/g' /etc/fstab
+        apt-get install -y quota >>"${OUTTO}" 2>&1
+        mount -o remount / || mount -o remount /home >>"${OUTTO}" 2>&1
+        quotacheck -auMF vfsv1 >>"${OUTTO}" 2>&1
+        quotaon -uv / >>"${OUTTO}" 2>&1
+        service quota start >>"${OUTTO}" 2>&1
+      else
+        sed -i 's/errors=remount-ro/usrjquota=aquota.user,jqfmt=vfsv1,errors=remount-ro/g' /etc/fstab
+        apt-get install -y quota >>"${OUTTO}" 2>&1
+        mount -o remount /home >>"${OUTTO}" 2>&1
+        quotacheck -auMF vfsv1 >>"${OUTTO}" 2>&1
+        quotaon -uv /home >>"${OUTTO}" 2>&1
+        service quota start >>"${OUTTO}" 2>&1
+      fi
+    fi
+	touch /install/.quota.lock
+	
+  fi
+}
 
 #exit on error function
 error_exit() {
@@ -168,6 +262,11 @@ if [ $# -gt 0 ]; then
   echo "No arguments allowed $1 is not a valid argument"
   exit 1
 fi
+
+#pop quota question
+_askquota
+_askpartition
+_qmount
 
 # check IP Address
 case $serverip in
@@ -517,6 +616,17 @@ echo "Configuring Rutorrent" | tee -a $logfile
 rm rutorrent/conf/config.php
 rtgetscripts /var/www/rutorrent/conf/config.php ru.config
 mkdir -p /var/www/rutorrent/conf/users/$user/plugins
+
+cd /var/www/rutorrent/plugins
+rm -r diskspace/
+git clone https://github.com/kvanbiesen/rtplugins.git
+if [[ $quota == yes ]]; then
+    if [[ ${primaryroot} == "root" ]]; then
+		rm -r diskspaceh/
+	else
+		rm -r diskspace/
+	fi
+
 
 echo "<?php" > /var/www/rutorrent/conf/users/$user/config.php
 echo >> /var/www/rutorrent/conf/users/$user/config.php
